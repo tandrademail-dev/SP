@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sorte Pública — Rifas com sorteio verificável</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0E1013;
+    --surface:#161920;
+    --surface-2:#1E222B;
+    --surface-3:#262B36;
+    --border:#2A2F3A;
+    --gold:#E7B24C;
+    --gold-dim:#8A6A2A;
+    --gold-soft:rgba(231,178,76,0.12);
+    --green:#48C78E;
+    --green-soft:rgba(72,199,142,0.12);
+    --red:#E85D5D;
+    --red-soft:rgba(232,93,93,0.12);
+    --text:#ECEDEF;
+    --text-muted:#8B92A3;
+    --text-dim:#5B6270;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(231,178,76,0.07), transparent),
+      radial-gradient(ellipse 700px 500px at 100% 10%, rgba(72,199,142,0.05), transparent),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .display{font-family:'Space Grotesk',sans-serif;}
+
+  /* ---------- Layout ---------- */
+  header.topbar{
+    position:sticky; top:0; z-index:50;
+    background:rgba(14,16,19,0.88);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border);
+    padding:14px 20px;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    flex-wrap:wrap;
+  }
+  .logo{display:flex; align-items:center; gap:10px;}
+  .logo .mark{
+    width:34px;height:34px;border-radius:8px;
+    background:linear-gradient(135deg,var(--gold),#B8821F);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif; font-weight:700; color:#151515; font-size:16px;
+  }
+  .logo .name{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;letter-spacing:-0.02em;}
+  .logo .tag{font-size:11px;color:var(--text-dim);margin-top:-2px;}
+
+  .wallet-chip{
+    display:flex;align-items:center;gap:8px;
+    background:var(--surface-2);border:1px solid var(--border);
+    padding:7px 12px;border-radius:20px;font-size:13px;
+  }
+  .wallet-chip b{font-family:'IBM Plex Mono',monospace;color:var(--gold);}
+  .admin-toggle{
+    background:var(--surface-2);border:1px solid var(--border);color:var(--text-muted);
+    padding:7px 12px;border-radius:20px;font-size:12.5px;cursor:pointer;
+  }
+  .admin-toggle.on{color:var(--green);border-color:rgba(72,199,142,0.4);background:var(--green-soft);}
+
+  main{max-width:1080px;margin:0 auto;padding:24px 20px 110px;}
+
+  /* ---------- Barra de navegação inferior ---------- */
+  nav.bottombar{
+    position:fixed; left:0; right:0; bottom:0; z-index:60;
+    background:rgba(20,23,29,0.92); backdrop-filter:blur(14px);
+    border-top:1px solid var(--border);
+    display:flex; justify-content:space-around; align-items:stretch;
+    padding:6px 6px calc(6px + env(safe-area-inset-bottom));
+    max-width:1080px; margin:0 auto;
+  }
+  nav.bottombar button{
+    background:transparent;border:none;color:var(--text-dim);cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:6px 10px;border-radius:10px;flex:1;max-width:110px;
+    font-family:'Inter',sans-serif;transition:color .15s;
+  }
+  nav.bottombar button .ic{font-size:19px;line-height:1;}
+  nav.bottombar button .lb{font-size:10.5px;font-weight:600;letter-spacing:.01em;}
+  nav.bottombar button.active{color:var(--gold);}
+  nav.bottombar button.active .ic{filter:drop-shadow(0 0 8px rgba(231,178,76,0.35));}
+
+  .fab{
+    position:fixed; right:20px; bottom:74px; z-index:65;
+    width:56px;height:56px;border-radius:50%;
+    background:linear-gradient(135deg,var(--gold),#C99632);
+    color:#181205; border:none; cursor:pointer;
+    font-size:26px; font-weight:600; line-height:1;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 8px 22px rgba(231,178,76,0.35);
+    transition:transform .15s;
+  }
+  .fab:hover{transform:scale(1.06);}
+
+  /* ---------- Perfil ---------- */
+  .profile-head{display:flex;align-items:center;gap:16px;margin-bottom:18px;}
+  .avatar{
+    width:64px;height:64px;border-radius:50%;flex-shrink:0;
+    background:linear-gradient(135deg,var(--gold),#8A6A2A);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;color:#181205;
+  }
+  .profile-stats{display:flex;gap:22px;margin:16px 0 20px;}
+  .profile-stats .stat{cursor:default;}
+  .follow-row{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:12px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;margin-bottom:9px;
+  }
+  .follow-row .who{display:flex;align-items:center;gap:11px;}
+  .follow-row .mini-avatar{
+    width:38px;height:38px;border-radius:50%;background:var(--surface-3);
+    display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;
+    font-family:'Space Grotesk',sans-serif;font-weight:600;color:var(--text-muted);
+  }
+  .follow-row .name{font-size:13.5px;font-weight:600;}
+  .follow-row .sub{font-size:11.5px;color:var(--text-dim);}
+  .btn-follow{
+    font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;cursor:pointer;
+    background:var(--surface-3);border:1px solid var(--border);color:var(--text);
+  }
+  .btn-follow.following{background:var(--gold-soft);color:var(--gold);border-color:rgba(231,178,76,0.35);}
+
+  h1.page-title{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;margin:0 0 6px;letter-spacing:-0.02em;}
+  p.page-sub{color:var(--text-muted);font-size:14px;margin:0 0 26px;line-height:1.5;}
+
+  /* ---------- Cards / grid ---------- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;}
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    overflow:hidden;cursor:pointer;transition:border-color .15s, transform .15s;
+    display:flex;flex-direction:column;
+  }
+  .card:hover{border-color:rgba(231,178,76,0.4);transform:translateY(-2px);}
+  .card .thumb{
+    height:130px;background:var(--surface-2);
+    display:flex;align-items:center;justify-content:center;
+    font-size:34px;color:var(--surface-3);position:relative;
+    border-bottom:1px solid var(--border);
+  }
+  .card .thumb .status-badge{
+    position:absolute;top:8px;right:8px;font-size:10.5px;font-weight:600;
+    padding:3px 8px;border-radius:20px;letter-spacing:0.03em;text-transform:uppercase;
+  }
+  .card .body{padding:13px 14px 15px;display:flex;flex-direction:column;gap:8px;flex:1;}
+  .card .cat{font-size:10.5px;color:var(--gold);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;}
+  .card h3{font-family:'Space Grotesk',sans-serif;font-size:15.5px;margin:0;font-weight:600;line-height:1.3;}
+  .card .meta{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--text-muted);margin-top:auto;}
+  .progress-bar{height:5px;background:var(--surface-3);border-radius:4px;overflow:hidden;}
+  .progress-bar .fill{height:100%;background:linear-gradient(90deg,var(--gold-dim),var(--gold));}
+
+  .badge{display:inline-block;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;letter-spacing:.02em;}
+  .badge.ativo{background:var(--green-soft);color:var(--green);}
+  .badge.contagem{background:var(--gold-soft);color:var(--gold);}
+  .badge.pendente{background:var(--surface-3);color:var(--text-muted);}
+  .badge.rejeitado{background:var(--red-soft);color:var(--red);}
+  .badge.expirado{background:var(--red-soft);color:var(--red);}
+  .badge.sorteado{background:var(--green-soft);color:var(--green);}
+
+  /* ---------- Empty state ---------- */
+  .empty{
+    border:1px dashed var(--border);border-radius:var(--radius);
+    padding:50px 20px;text-align:center;color:var(--text-dim);font-size:14px;
+  }
+  .empty .big{font-size:28px;margin-bottom:8px;}
+
+  /* ---------- Buttons / forms ---------- */
+  .btn{
+    font-family:'Inter',sans-serif;font-weight:600;font-size:13.5px;
+    padding:10px 18px;border-radius:8px;border:1px solid transparent;cursor:pointer;
+    transition:all .15s; display:inline-flex; align-items:center; gap:6px;
+  }
+  .btn-primary{background:linear-gradient(135deg,var(--gold),#C99632);color:#181205;}
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-primary:disabled{opacity:.4;cursor:not-allowed;filter:none;}
+  .btn-ghost{background:var(--surface-2);color:var(--text);border-color:var(--border);}
+  .btn-ghost:hover{background:var(--surface-3);}
+  .btn-danger{background:var(--red-soft);color:var(--red);border-color:rgba(232,93,93,0.3);}
+  .btn-green{background:var(--green-soft);color:var(--green);border-color:rgba(72,199,142,0.3);}
+  .btn-sm{padding:6px 12px;font-size:12.5px;}
+  .btn-block{width:100%;justify-content:center;}
+
+  label{display:block;font-size:12.5px;color:var(--text-muted);margin-bottom:5px;font-weight:500;}
+  input[type=text], input[type=number], input[type=url], textarea, select{
+    width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);
+    padding:10px 12px;border-radius:8px;font-family:'Inter',sans-serif;font-size:14px;
+    margin-bottom:16px;
+  }
+  input:focus, textarea:focus, select:focus{outline:none;border-color:var(--gold);}
+  textarea{resize:vertical;min-height:80px;}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .hint{font-size:11.5px;color:var(--text-dim);margin-top:-12px;margin-bottom:16px;}
+
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;}
+  .panel + .panel{margin-top:16px;}
+
+  /* ---------- Detail page ---------- */
+  .back-link{color:var(--text-muted);font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;margin-bottom:18px;}
+  .back-link:hover{color:var(--gold);}
+  .detail-hero{
+    height:220px;border-radius:var(--radius);background:var(--surface-2);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;font-size:52px;color:var(--surface-3);margin-bottom:20px;
+    overflow:hidden;
+  }
+  .detail-hero img{width:100%;height:100%;object-fit:cover;}
+  .stat-row{display:flex;gap:22px;flex-wrap:wrap;margin:18px 0;}
+  .stat{}
+  .stat .num{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;color:var(--gold);}
+  .stat .lbl{font-size:11.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;}
+
+  .countdown{
+    background:var(--gold-soft);border:1px solid rgba(231,178,76,0.3);border-radius:var(--radius);
+    padding:14px 16px;display:flex;align-items:center;justify-content:space-between;margin:16px 0;
+  }
+  .countdown .t{font-family:'IBM Plex Mono',monospace;font-size:17px;color:var(--gold);font-weight:600;}
+
+  /* ---------- Ticket stub (signature element) ---------- */
+  .ticket{
+    display:flex;align-items:stretch;background:var(--surface-2);border:1px solid var(--border);
+    border-radius:8px;overflow:hidden;margin-bottom:8px;
+  }
+  .ticket .main{flex:1;padding:10px 14px;display:flex;flex-direction:column;justify-content:center;gap:2px;}
+  .ticket .main .name{font-size:13px;}
+  .ticket .main .date{font-size:11px;color:var(--text-dim);}
+  .ticket .stub{
+    width:88px;flex-shrink:0;background:var(--surface-3);
+    border-left:2px dashed var(--border);
+    display:flex;align-items:center;justify-content:center;flex-direction:column;
+    position:relative;
+  }
+  .ticket .stub .num{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:var(--gold);}
+  .ticket .stub .hash{font-size:9px;color:var(--text-dim);}
+  .ticket.winner{border-color:var(--green);}
+  .ticket.winner .stub{background:var(--green-soft);border-left-color:var(--green);}
+  .ticket.winner .stub .num{color:var(--green);}
+
+  .winner-card{
+    background:linear-gradient(160deg,var(--green-soft),transparent);
+    border:1px solid rgba(72,199,142,0.35);border-radius:var(--radius);padding:22px;text-align:center;margin:18px 0;
+  }
+  .winner-card .trophy{font-size:34px;margin-bottom:6px;}
+  .winner-card .num{font-family:'IBM Plex Mono',monospace;font-size:30px;font-weight:700;color:var(--green);letter-spacing:.03em;}
+  .winner-card .seed{margin-top:10px;font-size:11.5px;color:var(--text-dim);}
+  .winner-card .seed .val{color:var(--text-muted);font-family:'IBM Plex Mono',monospace;}
+
+  /* ---------- Wallet ---------- */
+  .balance-hero{
+    background:linear-gradient(135deg,var(--surface-2),var(--surface));
+    border:1px solid var(--border);border-radius:var(--radius);padding:26px;margin-bottom:18px;
+    display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;
+  }
+  .balance-hero .amount{font-family:'IBM Plex Mono',monospace;font-size:36px;font-weight:600;color:var(--gold);}
+  .balance-hero .lbl{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;}
+
+  table.tx{width:100%;border-collapse:collapse;font-size:13px;}
+  table.tx th{text-align:left;color:var(--text-dim);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.04em;padding:8px 10px;border-bottom:1px solid var(--border);}
+  table.tx td{padding:10px 10px;border-bottom:1px solid var(--border);}
+  table.tx tr:last-child td{border-bottom:none;}
+  .amt-pos{color:var(--green);font-family:'IBM Plex Mono',monospace;}
+  .amt-neg{color:var(--red);font-family:'IBM Plex Mono',monospace;}
+
+  /* ---------- Admin ---------- */
+  .admin-row{
+    display:flex;justify-content:space-between;align-items:center;gap:14px;
+    padding:14px 16px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;margin-bottom:10px;flex-wrap:wrap;
+  }
+  .dev-box{
+    border:1px dashed rgba(231,178,76,0.4);background:var(--gold-soft);border-radius:8px;padding:14px 16px;margin-bottom:18px;
+  }
+  .dev-box .title{font-size:12px;font-weight:600;color:var(--gold);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em;}
+
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:var(--surface-3);border:1px solid var(--border);color:var(--text);
+    padding:12px 20px;border-radius:8px;font-size:13.5px;box-shadow:0 8px 30px rgba(0,0,0,0.4);
+    z-index:200;opacity:0;pointer-events:none;transition:opacity .25s, transform .25s;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
+
+  .section-title{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;margin:0 0 12px;}
+  .divider{height:1px;background:var(--border);margin:20px 0;}
+  .filters{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
+  .filters select{width:auto;margin-bottom:0;padding:8px 12px;font-size:13px;}
+  .filters input{width:auto;flex:1;min-width:180px;margin-bottom:0;}
+
+  @media (max-width:640px){
+    header.topbar{padding:12px 14px;}
+    nav.tabs{order:3;width:100%;justify-content:flex-start;overflow-x:auto;}
+    main{padding:20px 14px 80px;}
+    .field-row{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo">
+    <div class="mark">SP</div>
+    <div>
+      <div class="name">Sorte Pública</div>
+      <div class="tag">rifas com sorteio verificável</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="wallet-chip">Saldo: <b id="walletDisplay">0,00 €</b></div>
+    <button class="admin-toggle" id="adminToggle" onclick="toggleAdmin()">Modo Admin</button>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<button class="fab" id="fabCriar" onclick="goTab('criar')" title="Criar anúncio">+</button>
+
+<nav class="bottombar" id="bottombar"></nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   SORTE PÚBLICA — protótipo de marketplace de rifas
+   Vanilla JS + localStorage. Sem backend real.
+   Simula: saldo/carteira, criação e aprovação de anúncios,
+   compra de bilhetes a 1€, arranque de contagem de 7 dias
+   ao atingir o mínimo, sorteio com seed externa (verificável),
+   crédito em caso de anúncio sem mínimo atingido após 30 dias,
+   e página pública de vencedores.
+   ========================================================= */
+
+const DB_KEY = 'sortepublica_db_v1';
+const TICKET_PRICE = 1; // € fixo, conforme definido
+const SERVICE_FEE = 0.05; // 5% retido em cada transação, pago pelo vendedor no levantamento
+const COUNTDOWN_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias após atingir mínimo
+const CREDIT_WAIT_MS = 30 * 24 * 60 * 60 * 1000; // 30 dias após expirar sem mínimo
+
+let state = {
+  tab: 'inicio',
+  adminMode: false,
+  viewingAdId: null,
+  criarOrigemAdmin: false
+};
+
+function nowTS(){ return Date.now() + (loadDB().timeOffset || 0); }
+
+function defaultDB(){
+  return {
+    saldo: 25.00,
+    timeOffset: 0,
+    transacoes: [],
+    ads: [],
+    seq: 1,
+    seguindo: [],
+    contas: []
+  };
+}
+
+function loadDB(){
+  let raw = localStorage.getItem(DB_KEY);
+  if(!raw){
+    let db = defaultDB();
+    seedDemoData(db);
+    localStorage.setItem(DB_KEY, JSON.stringify(db));
+    return db;
+  }
+  return JSON.parse(raw);
+}
+function saveDB(db){ localStorage.setItem(DB_KEY, JSON.stringify(db)); render(); }
+
+function seedDemoData(db){
+  const t0 = Date.now();
+  db.ads.push({
+    id: db.seq++, titulo:'PlayStation 5 Slim + 2 comandos', categoria:'Eletrónica',
+    descricao:'PS5 Slim selada, edição digital, com 2 comandos DualSense originais. Ainda na caixa.',
+    fotoUrl:'', valorEstimado:520, localizacao:'Porto', minBilhetes:80, maxBilhetes:200,
+    prazoPublicacao: t0 + 20*24*60*60*1000, status:'ativo', dataCriacao:t0 - 3*24*60*60*1000,
+    dataAtivacao:t0 - 3*24*60*60*1000, vendedor:'TechDeals Porto', bilhetes:[], seedExterno:null,
+    bilheteVencedor:null, saldoLevantado:false
+  });
+  db.ads.push({
+    id: db.seq++, titulo:'Fim de semana no Douro para 2 pessoas', categoria:'Viagens',
+    descricao:'2 noites em quinta vínica no Douro, com prova de vinhos incluída e pequeno-almoço.',
+    fotoUrl:'', valorEstimado:340, localizacao:'Peso da Régua', minBilhetes:60, maxBilhetes:150,
+    prazoPublicacao: t0 + 15*24*60*60*1000, status:'contagem', dataCriacao:t0 - 6*24*60*60*1000,
+    dataAtivacao:t0 - 6*24*60*60*1000, dataMinAtingido: t0 - 1*24*60*60*1000,
+    dataSorteio: t0 - 1*24*60*60*1000 + COUNTDOWN_MS,
+    vendedor:'Quinta do Vale Escuro', bilhetes: gerarBilhetesDemo(62), seedExterno:null,
+    bilheteVencedor:null, saldoLevantado:false
+  });
+  db.ads.push({
+    id: db.seq++, titulo:'iPhone 15 Pro 256GB', categoria:'Eletrónica',
+    descricao:'iPhone 15 Pro, cor titânio natural, 256GB, sem uso, com fatura e garantia Apple.',
+    fotoUrl:'', valorEstimado:1150, localizacao:'Lisboa', minBilhetes:150, maxBilhetes:400,
+    prazoPublicacao: t0 - 2*24*60*60*1000, status:'ativo', dataCriacao:t0 - 33*24*60*60*1000,
+    dataAtivacao:t0 - 33*24*60*60*1000, vendedor:'Marta Cunha', bilhetes: gerarBilhetesDemo(40),
+    seedExterno:null, bilheteVencedor:null, saldoLevantado:false
+  });
+  db.ads.push({
+    id: db.seq++, titulo:'Bicicleta gravel Cannondale Topstone', categoria:'Desporto',
+    descricao:'Cannondale Topstone Carbon, tamanho M, revisão feita há 1 mês, poucos km.',
+    fotoUrl:'', valorEstimado:1800, localizacao:'Braga', minBilhetes:200, maxBilhetes:500,
+    prazoPublicacao: t0 - 4*24*60*60*1000, status:'expirado', dataCriacao:t0 - 40*24*60*60*1000,
+    dataAtivacao:t0 - 40*24*60*60*1000, dataExpirado: t0 - 4*24*60*60*1000,
+    vendedor:'João Bike Shop', bilhetes: gerarBilhetesDemo(35), seedExterno:null,
+    bilheteVencedor:null, saldoLevantado:false
+  });
+  db.ads.push({
+    id: db.seq++, titulo:'Smart TV LG OLED 55"', categoria:'Eletrónica',
+    descricao:'LG OLED55, comprada há 2 meses, fatura disponível, embalagem original.',
+    fotoUrl:'', valorEstimado:900, localizacao:'Coimbra', minBilhetes:100, maxBilhetes:250,
+    prazoPublicacao: t0 + 10*24*60*60*1000, status:'pendente', dataCriacao:t0 - 12*60*60*1000,
+    vendedor:'Rui Marques', bilhetes:[], seedExterno:null, bilheteVencedor:null, saldoLevantado:false
+  });
+  db.ads.push({
+    id: db.seq++, titulo:'Máquina de café Delonghi + kit de chávenas', categoria:'Casa',
+    descricao:'Delonghi automática, usada 3 vezes, com kit de 6 chávenas de porcelana incluído.',
+    fotoUrl:'', valorEstimado:410, localizacao:'Setúbal', minBilhetes:70, maxBilhetes:180,
+    prazoPublicacao: t0 - 40*24*60*60*1000, status:'sorteado', dataCriacao:t0 - 70*24*60*60*1000,
+    dataAtivacao:t0 - 70*24*60*60*1000, dataMinAtingido:t0 - 50*24*60*60*1000,
+    dataSorteio:t0 - 43*24*60*60*1000, vendedor:'Café & Cia',
+    bilhetes: gerarBilhetesDemo(74), seedExterno:'EM 07-14-19-27-33 | E3-E9',
+    bilheteVencedor:null, saldoLevantado:true
+  });
+  const ultimoAd = db.ads[db.ads.length-1];
+  ultimoAd.bilheteVencedor = ultimoAd.bilhetes[23].numero;
+
+  db.contas = [
+    {id:1, nome:'TechDeals Porto', bio:'Eletrónica em segunda mão verificada', anuncios:12},
+    {id:2, nome:'Quinta do Vale Escuro', bio:'Experiências e estadias no Douro', anuncios:4},
+    {id:3, nome:'Marta Cunha', bio:'Vende o que já não usa, sempre com fatura', anuncios:7},
+    {id:4, nome:'João Bike Shop', bio:'Bicicletas e material de ciclismo', anuncios:9},
+    {id:5, nome:'Café & Cia', bio:'Eletrodomésticos de cozinha', anuncios:3}
+  ];
+  db.seguindo = [1,3];
+}
+function gerarBilhetesDemo(n){
+  const nomes=['Ana P.','Carlos M.','Beatriz S.','Filipe R.','Sofia T.','Miguel A.','Inês L.','Tiago F.','Rita G.','Nuno V.'];
+  let arr=[];
+  for(let i=1;i<=n;i++){
+    arr.push({numero:i, comprador: nomes[Math.floor(Math.random()*nomes.length)], data: Date.now()-Math.floor(Math.random()*10)*86400000});
+  }
+  return arr;
+}
+
+/* ---------- Utilitários ---------- */
+function euro(v){ return v.toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
+function formatDate(ts){ return new Date(ts).toLocaleDateString('pt-PT',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+function formatDateTime(ts){ return new Date(ts).toLocaleString('pt-PT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+function hashCode(str){
+  let h = 0;
+  for(let i=0;i<str.length;i++){ h = (Math.imul(31,h) + str.charCodeAt(i))|0; }
+  return Math.abs(h);
+}
+
+/* ---------- Motor de estados (corre a cada render) ---------- */
+function processarEstados(db){
+  const t = nowTS();
+  let changed = false;
+  db.ads.forEach(ad=>{
+    if(ad.status === 'ativo' && ad.bilhetes.length >= ad.minBilhetes){
+      ad.status = 'contagem';
+      ad.dataMinAtingido = t;
+      ad.dataSorteio = t + COUNTDOWN_MS;
+      changed = true;
+    }
+    if(ad.status === 'ativo' && t >= ad.prazoPublicacao && ad.bilhetes.length < ad.minBilhetes){
+      ad.status = 'expirado';
+      ad.dataExpirado = t;
+      changed = true;
+    }
+    if(ad.status === 'contagem' && t >= ad.dataSorteio && !ad.bilheteVencedor && ad.seedExterno){
+      realizarSorteio(ad, db);
+      changed = true;
+    }
+  });
+  if(changed) localStorage.setItem(DB_KEY, JSON.stringify(db));
+}
+
+function realizarSorteio(ad, db){
+  const seedFinal = ad.seedExterno + '|' + ad.id + '|' + ad.bilhetes.length;
+  const idx = hashCode(seedFinal) % ad.bilhetes.length;
+  ad.bilheteVencedor = ad.bilhetes[idx].numero;
+  ad.status = 'sorteado';
+  // Se o anúncio é teu (vendedor), credita automaticamente o valor líquido na carteira
+  if(ad.vendedor === 'A tua conta (vendedor)' && !ad.saldoLevantado){
+    const bruto = ad.bilhetes.length * TICKET_PRICE;
+    const liquido = bruto * (1-SERVICE_FEE);
+    ad.saldoLevantado = true;
+    db.saldo += liquido;
+    db.transacoes.unshift({id:db.seq++, tipo:'venda_creditada', valor:liquido, data:nowTS(), refAd:ad.titulo, refAdId:ad.id, taxa: bruto*SERVICE_FEE});
+  }
+}
+
+/* ---------- Ações de negócio ---------- */
+function criarAnuncio(dados){
+  const db = loadDB();
+  db.ads.unshift({
+    id: db.seq++, titulo: dados.titulo, categoria: dados.categoria, descricao: dados.descricao,
+    fotoUrl: dados.fotoUrl, valorEstimado: dados.valorEstimado, localizacao: dados.localizacao,
+    minBilhetes: dados.minBilhetes, maxBilhetes: dados.maxBilhetes || null,
+    prazoPublicacao: nowTS() + dados.diasPrazo*24*60*60*1000,
+    status:'pendente', dataCriacao: nowTS(), vendedor:'A tua conta (vendedor)',
+    bilhetes:[], seedExterno:null, bilheteVencedor:null, saldoLevantado:false
+  });
+  saveDB(db);
+  toast('Anúncio submetido para aprovação.');
+  state.tab='perfil'; state.viewingAdId=null;
+  render();
+}
+
+function comprarBilhetes(adId, qtd){
+  const db = loadDB();
+  const ad = db.ads.find(a=>a.id===adId);
+  if(!ad) return;
+  const custo = qtd * TICKET_PRICE;
+  if(custo > db.saldo){ toast('Saldo insuficiente. Deposita mais na tua carteira.'); return; }
+  if(ad.maxBilhetes && ad.bilhetes.length + qtd > ad.maxBilhetes){ toast('Excede o número máximo de bilhetes disponíveis.'); return; }
+  let proxNum = ad.bilhetes.length ? Math.max(...ad.bilhetes.map(b=>b.numero))+1 : 1;
+  for(let i=0;i<qtd;i++){
+    ad.bilhetes.push({numero: proxNum+i, comprador:'Tu', data: nowTS()});
+  }
+  db.saldo -= custo;
+  db.transacoes.unshift({id:db.seq++, tipo:'compra_bilhete', valor:-custo, data:nowTS(), refAd:ad.titulo, refAdId:ad.id});
+  saveDB(db);
+  toast(qtd+' bilhete(s) comprado(s) por '+euro(custo)+'.');
+}
+
+function depositar(valor){
+  const db = loadDB();
+  db.saldo += valor;
+  db.transacoes.unshift({id:db.seq++, tipo:'deposito', valor:valor, data:nowTS(), refAd:null});
+  saveDB(db);
+  toast('Depósito de '+euro(valor)+' efetuado.');
+}
+
+function pedirCredito(adId){
+  const db = loadDB();
+  const ad = db.ads.find(a=>a.id===adId);
+  if(!ad) return;
+  const t = nowTS();
+  if(!(ad.status==='expirado' && t - ad.dataExpirado >= CREDIT_WAIT_MS)){ toast('Ainda não passaram 30 dias desde a expiração.'); return; }
+  const meusBilhetes = ad.bilhetes.filter(b=>b.comprador==='Tu' && !b.creditado);
+  if(meusBilhetes.length===0){ toast('Não tens bilhetes elegíveis para crédito neste anúncio.'); return; }
+  const valor = meusBilhetes.length * TICKET_PRICE;
+  meusBilhetes.forEach(b=>b.creditado=true);
+  db.saldo += valor;
+  db.transacoes.unshift({id:db.seq++, tipo:'credito', valor:valor, data:t, refAd:ad.titulo, refAdId:ad.id});
+  saveDB(db);
+  toast('Crédito de '+euro(valor)+' adicionado à tua carteira.');
+}
+
+function levantarDaCarteira(valor){
+  const db = loadDB();
+  if(!valor || valor<=0){ toast('Indica um valor válido.'); return; }
+  if(valor > db.saldo){ toast('Não podes levantar mais do que o saldo disponível.'); return; }
+  db.saldo -= valor;
+  db.transacoes.unshift({id:db.seq++, tipo:'levantamento', valor:-valor, data:nowTS(), refAd:null});
+  saveDB(db);
+  toast('Levantamento de '+euro(valor)+' pedido. O valor será transferido para a tua conta bancária.');
+}
+
+function toggleSeguir(contaId){
+  const db = loadDB();
+  const idx = db.seguindo.indexOf(contaId);
+  if(idx>=0) db.seguindo.splice(idx,1);
+  else db.seguindo.push(contaId);
+  saveDB(db);
+}
+
+function adminAprovar(adId){
+  const db = loadDB();
+  const ad = db.ads.find(a=>a.id===adId);
+  ad.status='ativo'; ad.dataAtivacao=nowTS();
+  saveDB(db);
+  toast('Anúncio aprovado e publicado.');
+}
+function adminRejeitar(adId){
+  const db = loadDB();
+  const ad = db.ads.find(a=>a.id===adId);
+  ad.status='rejeitado';
+  saveDB(db);
+  toast('Anúncio rejeitado.');
+}
+function adminDefinirSeed(adId, seed){
+  const db = loadDB();
+  const ad = db.ads.find(a=>a.id===adId);
+  ad.seedExterno = seed;
+  saveDB(db);
+  toast('Seed externa registada. O sorteio será realizado ao processar o estado.');
+}
+function avancarTempo(dias){
+  const db = loadDB();
+  db.timeOffset = (db.timeOffset||0) + dias*24*60*60*1000;
+  saveDB(db);
+  toast('Tempo avançado '+dias+' dia(s) (apenas para teste).');
+}
+function simularCompras(adId, qtd){
+  const db = loadDB();
+  const ad = db.ads.find(a=>a.id===adId);
+  const nomes=['Ana P.','Carlos M.','Beatriz S.','Filipe R.','Sofia T.','Miguel A.','Inês L.','Tiago F.','Rita G.','Nuno V.'];
+  let proxNum = ad.bilhetes.length ? Math.max(...ad.bilhetes.map(b=>b.numero))+1 : 1;
+  for(let i=0;i<qtd;i++){
+    ad.bilhetes.push({numero: proxNum+i, comprador: nomes[Math.floor(Math.random()*nomes.length)], data: nowTS()});
+  }
+  saveDB(db);
+  toast('Simulados '+qtd+' bilhetes de outros compradores.');
+}
+
+function toggleAdmin(){
+  state.adminMode = !state.adminMode;
+  if(state.adminMode) state.tab='admin';
+  else state.tab='inicio';
+  render();
+}
+
+/* ---------- Navegação ---------- */
+const TABS_BASE = [
+  {id:'inicio', label:'Início', icon:'🏠'},
+  {id:'vencedores', label:'Vencedores', icon:'🏆'},
+  {id:'perfil', label:'Perfil', icon:'👤'},
+  {id:'carteira', label:'Carteira', icon:'👛'}
+];
+
+function renderBottomNav(){
+  let tabs = TABS_BASE.slice();
+  if(state.adminMode) tabs.push({id:'admin', label:'Admin', icon:'🛠'});
+  const nav = document.getElementById('bottombar');
+  const activeForBar = (state.tab==='detalhe' || state.tab==='criar') ? null : state.tab;
+  nav.innerHTML = tabs.map(t=>
+    `<button class="${activeForBar===t.id?'active':''}" onclick="goTab('${t.id}')">
+      <span class="ic">${t.icon}</span><span class="lb">${t.label}</span>
+    </button>`
+  ).join('');
+  document.getElementById('adminToggle').className = 'admin-toggle' + (state.adminMode?' on':'');
+  document.getElementById('adminToggle').textContent = state.adminMode ? '● Admin ativo' : 'Modo Admin';
+  document.getElementById('fabCriar').style.display = (state.tab==='inicio') ? 'flex' : 'none';
+}
+function goTab(id){ state.tab = id; state.viewingAdId=null; render(); }
+function verAnuncio(id){ state.viewingAdId = id; state.tab='detalhe'; render(); }
+
+/* ---------- Renderização principal ---------- */
+function render(){
+  const db = loadDB();
+  processarEstados(db);
+  const dbFresh = loadDB();
+  document.getElementById('walletDisplay').textContent = euro(dbFresh.saldo);
+  renderBottomNav();
+  const app = document.getElementById('app');
+  if(state.tab==='inicio') app.innerHTML = viewMercado(dbFresh);
+  else if(state.tab==='criar') app.innerHTML = viewCriar();
+  else if(state.tab==='carteira') app.innerHTML = viewCarteira(dbFresh);
+  else if(state.tab==='perfil') app.innerHTML = viewPerfil(dbFresh);
+  else if(state.tab==='vencedores') app.innerHTML = viewVencedores(dbFresh);
+  else if(state.tab==='admin') app.innerHTML = viewAdmin(dbFresh);
+  else if(state.tab==='detalhe') app.innerHTML = viewDetalhe(dbFresh, state.viewingAdId);
+}
+
+function statusBadge(ad){
+  const t = nowTS();
+  const map = {
+    pendente:'Em aprovação', ativo:'Ativo', contagem:'Sorteio marcado',
+    rejeitado:'Rejeitado', expirado:'Expirado', sorteado:'Sorteado'
+  };
+  return `<span class="badge ${ad.status}">${map[ad.status]}</span>`;
+}
+
+/* ---------- Mercado ---------- */
+function viewMercado(db){
+  const visiveis = db.ads.filter(a=>['ativo','contagem'].includes(a.status));
+  if(visiveis.length===0){
+    return `<h1 class="page-title">Início</h1><p class="page-sub">Rifas publicadas e aprovadas, disponíveis para compra de bilhetes.</p>
+    <div class="empty"><div class="big">🎟️</div>Ainda não há rifas ativas no mercado. Toca em + para criar a primeira.</div>`;
+  }
+  return `
+    <h1 class="page-title">Início</h1>
+    <p class="page-sub">Todas as rifas aqui já passaram por verificação. Compra bilhetes a ${euro(TICKET_PRICE)} cada.</p>
+    <div class="grid">
+      ${visiveis.map(ad=>cardAnuncio(ad)).join('')}
+    </div>`;
+}
+function cardAnuncio(ad){
+  const pct = Math.min(100, Math.round((ad.bilhetes.length/ad.minBilhetes)*100));
+  return `
+    <div class="card" onclick="verAnuncio(${ad.id})">
+      <div class="thumb">🎁<span class="status-badge" style="background:var(--surface-3);color:var(--text-muted);">${ad.categoria}</span></div>
+      <div class="body">
+        <div class="cat">${ad.status==='contagem' ? 'Sorteio marcado' : 'Valor est. '+euro(ad.valorEstimado)}</div>
+        <h3>${ad.titulo}</h3>
+        <div class="progress-bar"><div class="fill" style="width:${pct}%"></div></div>
+        <div class="meta">
+          <span>${ad.bilhetes.length}/${ad.minBilhetes} bilhetes (mín.)</span>
+          <span class="mono" style="color:var(--gold);">${euro(TICKET_PRICE)}</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ---------- Detalhe ---------- */
+function viewDetalhe(db, adId){
+  const ad = db.ads.find(a=>a.id===adId);
+  if(!ad) return `<div class="empty">Anúncio não encontrado.</div>`;
+  const t = nowTS();
+  const meusBilhetes = ad.bilhetes.filter(b=>b.comprador==='Tu');
+  let acaoHtml = '';
+
+  if(ad.status==='ativo'){
+    const restamMin = Math.max(0, ad.minBilhetes - ad.bilhetes.length);
+    acaoHtml = `
+      <div class="panel">
+        <div class="section-title">Comprar bilhetes</div>
+        <p class="hint" style="margin-top:0;">Faltam <b style="color:var(--gold);">${restamMin}</b> bilhetes para atingir o mínimo e marcar a data do sorteio (7 dias depois).</p>
+        <div class="field-row">
+          <div><label>Quantidade de bilhetes</label><input type="number" id="qtdBilhetes" min="1" value="1"></div>
+          <div><label>Custo total</label><input type="text" id="custoTotal" value="${euro(TICKET_PRICE)}" disabled></div>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="confirmarCompra(${ad.id})">Comprar bilhetes</button>
+      </div>`;
+  } else if(ad.status==='contagem'){
+    const restante = Math.max(0, ad.dataSorteio - t);
+    acaoHtml = `
+      <div class="countdown">
+        <div>
+          <div style="font-size:12px;color:var(--text-muted);">Sorteio marcado para</div>
+          <div style="font-size:14px;">${formatDateTime(ad.dataSorteio)}</div>
+        </div>
+        <div class="t mono">${formatContagem(restante)}</div>
+      </div>
+      <div class="panel">
+        <div class="section-title">Ainda podes comprar bilhetes</div>
+        <div class="field-row">
+          <div><label>Quantidade de bilhetes</label><input type="number" id="qtdBilhetes" min="1" value="1"></div>
+          <div><label>Custo total</label><input type="text" id="custoTotal" value="${euro(TICKET_PRICE)}" disabled></div>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="confirmarCompra(${ad.id})">Comprar bilhetes</button>
+      </div>`;
+  } else if(ad.status==='sorteado'){
+    acaoHtml = `
+      <div class="winner-card">
+        <div class="trophy">🏆</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">Bilhete vencedor</div>
+        <div class="num">Nº ${String(ad.bilheteVencedor).padStart(4,'0')}</div>
+        <div style="margin-top:8px;font-size:14px;">${ad.bilhetes.find(b=>b.numero===ad.bilheteVencedor)?.comprador || '—'}</div>
+        <div class="seed">Seed externa usada para o sorteio: <span class="val">${ad.seedExterno}</span></div>
+      </div>`;
+  } else if(ad.status==='expirado'){
+    const podePedir = t - ad.dataExpirado >= CREDIT_WAIT_MS;
+    const diasFaltam = Math.max(0, Math.ceil((CREDIT_WAIT_MS - (t-ad.dataExpirado))/86400000));
+    acaoHtml = `
+      <div class="panel">
+        <div class="section-title">Este anúncio expirou sem atingir o mínimo de bilhetes</div>
+        <p class="hint" style="margin-top:0;">Expirou em ${formatDate(ad.dataExpirado)}. ${podePedir ? 'Já podes pedir o crédito dos teus bilhetes.' : 'Podes pedir crédito para os teus bilhetes '+diasFaltam+' dia(s) depois de expirar (30 dias no total).'}</p>
+        <button class="btn ${podePedir?'btn-primary':'btn-ghost'} btn-block" ${podePedir?'':'disabled'} onclick="pedirCredito(${ad.id})">Pedir crédito na plataforma</button>
+      </div>`;
+  } else if(ad.status==='pendente'){
+    acaoHtml = `<div class="panel"><div class="section-title">Anúncio em aprovação</div><p class="hint" style="margin-top:0;">Ainda não está visível no mercado — aguarda revisão da equipa.</p></div>`;
+  } else if(ad.status==='rejeitado'){
+    acaoHtml = `<div class="panel"><div class="section-title">Anúncio rejeitado</div><p class="hint" style="margin-top:0;">Este anúncio não cumpriu os critérios de publicação.</p></div>`;
+  }
+
+  return `
+    <div class="back-link" onclick="goTab('inicio')">← Voltar ao início</div>
+    <div class="detail-hero">🎁</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+      <div>
+        <div class="cat" style="color:var(--gold);font-size:11px;text-transform:uppercase;font-weight:600;margin-bottom:4px;">${ad.categoria} · ${ad.localizacao}</div>
+        <h1 class="page-title" style="margin-bottom:0;">${ad.titulo}</h1>
+      </div>
+      ${statusBadge(ad)}
+    </div>
+    <p class="page-sub">${ad.descricao}</p>
+    <div class="stat-row">
+      <div class="stat"><div class="num">${euro(ad.valorEstimado)}</div><div class="lbl">Valor estimado</div></div>
+      <div class="stat"><div class="num">${ad.bilhetes.length}</div><div class="lbl">Bilhetes vendidos</div></div>
+      <div class="stat"><div class="num">${ad.minBilhetes}</div><div class="lbl">Mínimo p/ sorteio</div></div>
+      <div class="stat"><div class="num">${ad.maxBilhetes||'—'}</div><div class="lbl">Máximo disponível</div></div>
+      <div class="stat"><div class="num">${euro(TICKET_PRICE)}</div><div class="lbl">Preço por bilhete</div></div>
+    </div>
+    ${acaoHtml}
+    ${meusBilhetes.length>0 ? `
+    <div class="divider"></div>
+    <div class="section-title">Os teus bilhetes neste anúncio (${meusBilhetes.length})</div>
+    ${meusBilhetes.map(b=>ticketHtml(b, ad.bilheteVencedor)).join('')}
+    ` : ''}
+    <div class="divider"></div>
+    <p class="hint" style="margin-top:0;">Vendedor: ${ad.vendedor} · Anúncio publicado a ${formatDate(ad.dataCriacao)}</p>
+  `;
+}
+function ticketHtml(b, vencedor){
+  const isWinner = vencedor===b.numero;
+  return `<div class="ticket ${isWinner?'winner':''}">
+    <div class="main"><div class="name">${b.comprador}${isWinner?' 🏆 vencedor':''}</div><div class="date">${formatDate(b.data)}</div></div>
+    <div class="stub"><div class="num">#${String(b.numero).padStart(4,'0')}</div><div class="hash">rifa</div></div>
+  </div>`;
+}
+function formatContagem(ms){
+  if(ms<=0) return 'a processar…';
+  const d = Math.floor(ms/86400000), h = Math.floor((ms%86400000)/3600000), m = Math.floor((ms%3600000)/60000);
+  return `${d}d ${h}h ${m}m`;
+}
+function confirmarCompra(adId){
+  const qtd = parseInt(document.getElementById('qtdBilhetes').value,10);
+  if(!qtd || qtd<1){ toast('Indica uma quantidade válida.'); return; }
+  comprarBilhetes(adId, qtd);
+  verAnuncio(adId);
+}
+
+/* ---------- Criar anúncio ---------- */
+function viewCriar(){
+  return `
+    <div class="back-link" onclick="goTab('inicio')">← Voltar ao início</div>
+    <h1 class="page-title">Criar anúncio</h1>
+    <p class="page-sub">O teu anúncio passa por aprovação antes de ficar visível no mercado. Todos os bilhetes custam ${euro(TICKET_PRICE)}.</p>
+    <div class="panel">
+      <label>Título do anúncio</label>
+      <input type="text" id="f_titulo" placeholder="Ex: PlayStation 5 Slim + 2 comandos">
+      <label>Descrição</label>
+      <textarea id="f_descricao" placeholder="Descreve o prémio, estado, o que está incluído..."></textarea>
+      <div class="field-row">
+        <div>
+          <label>Categoria</label>
+          <select id="f_categoria">
+            <option>Eletrónica</option><option>Viagens</option><option>Casa</option>
+            <option>Desporto</option><option>Moda</option><option>Automóvel</option><option>Outro</option>
+          </select>
+        </div>
+        <div>
+          <label>Localização</label>
+          <input type="text" id="f_localizacao" placeholder="Ex: Lisboa">
+        </div>
+      </div>
+      <label>URL de foto (opcional para este protótipo)</label>
+      <input type="url" id="f_foto" placeholder="https://...">
+      <div class="field-row">
+        <div>
+          <label>Valor estimado do prémio (€)</label>
+          <input type="number" id="f_valor" min="1" placeholder="Ex: 500">
+        </div>
+        <div>
+          <label>Preço por bilhete</label>
+          <input type="text" value="${euro(TICKET_PRICE)} (fixo)" disabled>
+        </div>
+      </div>
+      <div class="field-row">
+        <div>
+          <label>Quantidade mínima de bilhetes</label>
+          <input type="number" id="f_min" min="1" placeholder="Ex: 100">
+        </div>
+        <div>
+          <label>Quantidade máxima de bilhetes (opcional)</label>
+          <input type="number" id="f_max" min="1" placeholder="Ex: 250">
+        </div>
+      </div>
+      <label>Prazo para atingir o mínimo (dias)</label>
+      <input type="number" id="f_prazo" min="1" value="30">
+      <p class="hint" style="margin-top:-10px;">Se o mínimo não for atingido até ao prazo, o anúncio expira. Ao atingir o mínimo, o sorteio é marcado automaticamente para 7 dias depois.</p>
+      <button class="btn btn-primary btn-block" onclick="submeterAnuncio()">Submeter para aprovação</button>
+    </div>`;
+}
+function submeterAnuncio(){
+  const titulo = document.getElementById('f_titulo').value.trim();
+  const descricao = document.getElementById('f_descricao').value.trim();
+  const categoria = document.getElementById('f_categoria').value;
+  const localizacao = document.getElementById('f_localizacao').value.trim();
+  const fotoUrl = document.getElementById('f_foto').value.trim();
+  const valorEstimado = parseFloat(document.getElementById('f_valor').value);
+  const minBilhetes = parseInt(document.getElementById('f_min').value,10);
+  const maxBilhetes = parseInt(document.getElementById('f_max').value,10) || null;
+  const diasPrazo = parseInt(document.getElementById('f_prazo').value,10);
+
+  if(!titulo || !descricao || !localizacao || !valorEstimado || !minBilhetes || !diasPrazo){
+    toast('Preenche todos os campos obrigatórios.'); return;
+  }
+  if(maxBilhetes && maxBilhetes < minBilhetes){ toast('O máximo não pode ser menor que o mínimo.'); return; }
+  criarAnuncio({titulo,descricao,categoria,localizacao,fotoUrl,valorEstimado,minBilhetes,maxBilhetes,diasPrazo});
+}
+
+/* ---------- Carteira ---------- */
+function viewCarteira(db){
+  return `
+    <h1 class="page-title">Carteira</h1>
+    <p class="page-sub">Deposita saldo para comprares bilhetes. O valor líquido das tuas vendas (após taxa de serviço de 5%) entra aqui automaticamente assim que o sorteio é realizado, e podes levantá-lo quando quiseres.</p>
+    <div class="balance-hero">
+      <div><div class="lbl">Saldo disponível</div><div class="amount">${euro(db.saldo)}</div></div>
+    </div>
+    <div class="field-row">
+      <div class="panel">
+        <div class="section-title">Depositar</div>
+        <label>Valor a depositar (€)</label>
+        <input type="number" id="valorDeposito" placeholder="Ex: 20" style="margin-bottom:12px;">
+        <button class="btn btn-primary btn-block" onclick="fazerDeposito()">Depositar</button>
+      </div>
+      <div class="panel">
+        <div class="section-title">Levantar</div>
+        <label>Valor a levantar (€)</label>
+        <input type="number" id="valorLevantamento" placeholder="Ex: 20" style="margin-bottom:12px;">
+        <button class="btn btn-ghost btn-block" onclick="fazerLevantamento()">Levantar para o banco</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="section-title">Histórico de transações</div>
+      ${db.transacoes.length===0 ? `<div class="empty">Ainda não há transações.</div>` : `
+      <table class="tx">
+        <thead><tr><th>Data</th><th>Tipo</th><th>Detalhe</th><th style="text-align:right;">Valor</th></tr></thead>
+        <tbody>
+          ${db.transacoes.slice(0,30).map(tx=>`
+            <tr>
+              <td>${formatDate(tx.data)}</td>
+              <td>${tipoLabel(tx.tipo)}</td>
+              <td>${tx.refAd||'—'}</td>
+              <td style="text-align:right;" class="${tx.valor>=0?'amt-pos':'amt-neg'}">${tx.valor>=0?'+':''}${euro(tx.valor)}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`}
+    </div>`;
+}
+function tipoLabel(t){
+  return {
+    deposito:'Depósito', compra_bilhete:'Compra de bilhete', credito:'Crédito (rifa sem mínimo)',
+    venda_creditada:'Venda creditada (sorteio)', levantamento:'Levantamento para o banco'
+  }[t] || t;
+}
+function fazerDeposito(){
+  const v = parseFloat(document.getElementById('valorDeposito').value);
+  if(!v || v<=0){ toast('Indica um valor válido.'); return; }
+  depositar(v);
+}
+function fazerLevantamento(){
+  const v = parseFloat(document.getElementById('valorLevantamento').value);
+  levantarDaCarteira(v);
+}
+
+/* ---------- Perfil ---------- */
+function viewPerfil(db){
+  const meus = db.ads.filter(a=>a.vendedor==='A tua conta (vendedor)');
+  const seguindoCount = db.seguindo.length;
+
+  const meusHtml = meus.length===0
+    ? `<div class="empty"><div class="big">📢</div>Ainda não criaste nenhum anúncio. Toca em + no Início para criares o primeiro.</div>`
+    : meus.map(ad=>{
+        const bruto = ad.bilhetes.length*TICKET_PRICE;
+        const liquido = bruto*(1-SERVICE_FEE);
+        return `
+        <div class="admin-row" onclick="verAnuncio(${ad.id})" style="cursor:pointer;">
+          <div>
+            <div style="font-weight:600;font-size:14px;">${ad.titulo}</div>
+            <div style="font-size:12px;color:var(--text-muted);">${ad.bilhetes.length} bilhetes vendidos · líquido ${euro(liquido)} após taxa de 5%</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            ${statusBadge(ad)}
+            ${ad.status==='sorteado' ? `<span class="hint" style="margin:0;color:var(--green);">Creditado na carteira ✓</span>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+
+  const contasHtml = db.contas.map(c=>{
+    const aSeguir = db.seguindo.includes(c.id);
+    return `
+    <div class="follow-row">
+      <div class="who">
+        <div class="mini-avatar">${c.nome.charAt(0)}</div>
+        <div><div class="name">${c.nome}</div><div class="sub">${c.bio} · ${c.anuncios} anúncios</div></div>
+      </div>
+      <button class="btn-follow ${aSeguir?'following':''}" onclick="toggleSeguir(${c.id})">${aSeguir?'A seguir':'Seguir'}</button>
+    </div>`;
+  }).join('');
+
+  return `
+    <div class="profile-head">
+      <div class="avatar">TU</div>
+      <div>
+        <h1 class="page-title" style="margin-bottom:2px;">A tua conta</h1>
+        <p class="page-sub" style="margin:0;">Compradora e anunciante na Sorte Pública</p>
+      </div>
+    </div>
+    <div class="profile-stats">
+      <div class="stat"><div class="num">${meus.length}</div><div class="lbl">Anúncios</div></div>
+      <div class="stat"><div class="num">${seguindoCount}</div><div class="lbl">A seguir</div></div>
+      <div class="stat"><div class="num">3</div><div class="lbl">Seguidores</div></div>
+    </div>
+
+    <div class="section-title">Os meus anúncios</div>
+    ${meusHtml}
+
+    <div class="divider"></div>
+    <div class="section-title">Contas para seguir</div>
+    <p class="hint" style="margin-top:0;">Segue anunciantes de confiança para veres primeiro as rifas novas deles no Início.</p>
+    ${contasHtml}
+  `;
+}
+
+/* ---------- Vencedores (página pública) ---------- */
+function viewVencedores(db){
+  const sorteados = db.ads.filter(a=>a.status==='sorteado');
+  if(sorteados.length===0){
+    return `<h1 class="page-title">Vencedores</h1><p class="page-sub">Registo público de todos os sorteios realizados na plataforma.</p>
+    <div class="empty"><div class="big">🏆</div>Ainda não houve sorteios concluídos.</div>`;
+  }
+  return `
+    <h1 class="page-title">Vencedores</h1>
+    <p class="page-sub">Todos os sorteios são calculados a partir de uma seed pública externa (ex: últimos números do Euromilhões), combinada com o ID do anúncio — qualquer pessoa pode verificar o resultado.</p>
+    <div class="grid">
+      ${sorteados.map(ad=>{
+        const vencedor = ad.bilhetes.find(b=>b.numero===ad.bilheteVencedor);
+        return `
+        <div class="card" onclick="verAnuncio(${ad.id})">
+          <div class="thumb">🏆</div>
+          <div class="body">
+            <div class="cat">${formatDate(ad.dataSorteio)}</div>
+            <h3>${ad.titulo}</h3>
+            <div class="meta"><span>Bilhete Nº ${String(ad.bilheteVencedor).padStart(4,'0')}</span><span>${vencedor?.comprador||'—'}</span></div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+/* ---------- Admin ---------- */
+function viewAdmin(db){
+  const pendentes = db.ads.filter(a=>a.status==='pendente');
+  const aguardaSeed = db.ads.filter(a=>a.status==='contagem' && nowTS()>=a.dataSorteio && !a.seedExterno);
+  return `
+    <h1 class="page-title">Painel de administração</h1>
+    <p class="page-sub">Aprovação de anúncios e ferramentas para realizar sorteios com seed externa verificável.</p>
+
+    <div class="dev-box">
+      <div class="title">Ferramentas de teste (só neste protótipo)</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" onclick="avancarTempo(1)">Avançar 1 dia</button>
+        <button class="btn btn-ghost btn-sm" onclick="avancarTempo(7)">Avançar 7 dias</button>
+        <button class="btn btn-ghost btn-sm" onclick="avancarTempo(30)">Avançar 30 dias</button>
+      </div>
+      <p class="hint" style="margin-bottom:0;margin-top:8px;">Simula a passagem de tempo para testar contagens de 7 e 30 dias sem esperar de verdade.</p>
+    </div>
+
+    <div class="section-title">Anúncios por aprovar (${pendentes.length})</div>
+    ${pendentes.length===0 ? `<div class="empty">Sem anúncios pendentes.</div>` :
+      pendentes.map(ad=>`
+        <div class="admin-row">
+          <div>
+            <div style="font-weight:600;font-size:14px;">${ad.titulo}</div>
+            <div style="font-size:12px;color:var(--text-muted);">${ad.categoria} · ${ad.localizacao} · min. ${ad.minBilhetes} bilhetes · valor est. ${euro(ad.valorEstimado)}</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-green btn-sm" onclick="adminAprovar(${ad.id})">Aprovar</button>
+            <button class="btn btn-danger btn-sm" onclick="adminRejeitar(${ad.id})">Rejeitar</button>
+          </div>
+        </div>`).join('')}
+
+    <div class="divider"></div>
+    <div class="section-title">Sorteios à espera de seed externa</div>
+    ${aguardaSeed.length===0 ? `<div class="empty">Nenhum sorteio à espera de seed neste momento.</div>` :
+      aguardaSeed.map(ad=>`
+        <div class="admin-row">
+          <div>
+            <div style="font-weight:600;font-size:14px;">${ad.titulo}</div>
+            <div style="font-size:12px;color:var(--text-muted);">${ad.bilhetes.length} bilhetes vendidos · data de sorteio atingida</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" id="seed_${ad.id}" placeholder="Ex: Euromilhões 07-14-19-27-33" style="width:220px;margin-bottom:0;">
+            <button class="btn btn-primary btn-sm" onclick="confirmarSeed(${ad.id})">Realizar sorteio</button>
+          </div>
+        </div>`).join('')}
+
+    <div class="divider"></div>
+    <div class="section-title">Ferramenta de simulação — bilhetes de outros compradores</div>
+    <p class="hint" style="margin-top:0;">Usa isto para simular vários compradores num anúncio e testar o sorteio com mais bilhetes.</p>
+    <div class="field-row">
+      <select id="simAdId">
+        ${db.ads.filter(a=>['ativo','contagem'].includes(a.status)).map(a=>`<option value="${a.id}">${a.titulo}</option>`).join('')}
+      </select>
+      <div style="display:flex;gap:8px;">
+        <input type="number" id="simQtd" value="10" style="margin-bottom:0;">
+        <button class="btn btn-ghost" onclick="rodarSimulacao()">Simular compras</button>
+      </div>
+    </div>
+  `;
+}
+function confirmarSeed(adId){
+  const val = document.getElementById('seed_'+adId).value.trim();
+  if(!val){ toast('Indica a seed externa (ex: números do Euromilhões).'); return; }
+  adminDefinirSeed(adId, val);
+}
+function rodarSimulacao(){
+  const adId = parseInt(document.getElementById('simAdId').value,10);
+  const qtd = parseInt(document.getElementById('simQtd').value,10) || 1;
+  simularCompras(adId, qtd);
+}
+
+render();
+</script>
+</body>
+</html>

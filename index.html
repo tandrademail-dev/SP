@@ -91,19 +91,17 @@
   nav.bottombar button .ic{font-size:19px;line-height:1;}
   nav.bottombar button .lb{font-size:10.5px;font-weight:600;letter-spacing:.01em;}
   nav.bottombar button.active{color:var(--gold);}
-  nav.bottombar button.active .ic{filter:drop-shadow(0 0 8px rgba(231,178,76,0.35));}
 
   .fab{
     position:fixed; right:20px; bottom:74px; z-index:65;
-    width:56px;height:56px;border-radius:50%;
-    background:linear-gradient(135deg,var(--gold),#C99632);
+    width:52px;height:52px;border-radius:50%;
+    background:var(--gold);
     color:#181205; border:none; cursor:pointer;
-    font-size:26px; font-weight:600; line-height:1;
     display:flex;align-items:center;justify-content:center;
-    box-shadow:0 8px 22px rgba(231,178,76,0.35);
-    transition:transform .15s;
+    box-shadow:0 4px 14px rgba(0,0,0,0.35);
+    transition:filter .15s;
   }
-  .fab:hover{transform:scale(1.06);}
+  .fab:hover{filter:brightness(1.08);}
 
   /* ---------- Perfil ---------- */
   .profile-head{display:flex;align-items:center;gap:16px;margin-bottom:18px;}
@@ -147,9 +145,10 @@
   .card .thumb{
     height:130px;background:var(--surface-2);
     display:flex;align-items:center;justify-content:center;
-    font-size:34px;color:var(--surface-3);position:relative;
+    color:var(--text-dim);position:relative;
     border-bottom:1px solid var(--border);
   }
+  .card .thumb.thumb-gold{color:var(--gold-dim);}
   .card .thumb .status-badge{
     position:absolute;top:8px;right:8px;font-size:10.5px;font-weight:600;
     padding:3px 8px;border-radius:20px;letter-spacing:0.03em;text-transform:uppercase;
@@ -174,7 +173,7 @@
     border:1px dashed var(--border);border-radius:var(--radius);
     padding:50px 20px;text-align:center;color:var(--text-dim);font-size:14px;
   }
-  .empty .big{font-size:28px;margin-bottom:8px;}
+  .empty .big{margin-bottom:10px;display:flex;justify-content:center;color:var(--text-dim);}
 
   /* ---------- Buttons / forms ---------- */
   .btn{
@@ -211,7 +210,7 @@
   .back-link:hover{color:var(--gold);}
   .detail-hero{
     height:220px;border-radius:var(--radius);background:var(--surface-2);border:1px solid var(--border);
-    display:flex;align-items:center;justify-content:center;font-size:52px;color:var(--surface-3);margin-bottom:20px;
+    display:flex;align-items:center;justify-content:center;color:var(--text-dim);margin-bottom:20px;
     overflow:hidden;
   }
   .detail-hero img{width:100%;height:100%;object-fit:cover;}
@@ -250,7 +249,7 @@
     background:linear-gradient(160deg,var(--green-soft),transparent);
     border:1px solid rgba(72,199,142,0.35);border-radius:var(--radius);padding:22px;text-align:center;margin:18px 0;
   }
-  .winner-card .trophy{font-size:34px;margin-bottom:6px;}
+  .winner-card .verified-icon{color:var(--green);margin-bottom:8px;display:flex;justify-content:center;}
   .winner-card .num{font-family:'IBM Plex Mono',monospace;font-size:30px;font-weight:700;color:var(--green);letter-spacing:.03em;}
   .winner-card .seed{margin-top:10px;font-size:11.5px;color:var(--text-dim);}
   .winner-card .seed .val{color:var(--text-muted);font-family:'IBM Plex Mono',monospace;}
@@ -321,7 +320,7 @@
 
 <main id="app"></main>
 
-<button class="fab" id="fabCriar" onclick="goTab('criar')" title="Criar anúncio">+</button>
+<button class="fab" id="fabCriar" onclick="goTab('criar')" title="Criar anúncio"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
 
 <nav class="bottombar" id="bottombar"></nav>
 
@@ -343,6 +342,22 @@ const TICKET_PRICE = 1; // € fixo, conforme definido
 const SERVICE_FEE = 0.05; // 5% retido em cada transação, pago pelo vendedor no levantamento
 const COUNTDOWN_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias após atingir mínimo
 const CREDIT_WAIT_MS = 30 * 24 * 60 * 60 * 1000; // 30 dias após expirar sem mínimo
+
+/* ---------- Ícones (SVG minimalistas, sem emojis) ---------- */
+const ICONS = {
+  home: s=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.2 12 4l8 7.2"/><path d="M6 9.8V19a1 1 0 0 0 1 1h3v-6h4v6h3a1 1 0 0 0 1-1V9.8"/></svg>`,
+  award: s=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="5"/><path d="M9 12.8 7.6 20l4.4-2.4 4.4 2.4-1.4-7.2"/></svg>`,
+  user: s=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1-3.9 4.2-6.1 7.5-6.1s6.5 2.2 7.5 6.1"/></svg>`,
+  wallet: s=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="17" height="12" rx="2"/><path d="M3.5 10.2h17"/><path d="M15.2 14.2h2.3"/></svg>`,
+  settings: s=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.6M12 18.4V21M21 12h-2.6M5.6 12H3M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8M18.4 18.4l-1.8-1.8M7.4 7.4 5.6 5.6"/></svg>`,
+  plus: s=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>`,
+  arrowLeft: s=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>`,
+  image: s=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="1.6"/><circle cx="9" cy="10" r="1.5"/><path d="M20 15.5 15 10l-9 9"/></svg>`,
+  check: s=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.6 2.6 5.4-6"/></svg>`,
+  checkSm: s=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>`,
+  inbox: s=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.8 12h4.2l1.4 2.8h5.2L16 12h4.2"/><rect x="3" y="12" width="18" height="7" rx="1.4"/><path d="M6.5 12 7.6 5h8.8l1.1 7"/></svg>`
+};
+function ic(name, size){ return ICONS[name] ? ICONS[name](size||18) : ''; }
 
 let state = {
   tab: 'inicio',
@@ -631,24 +646,24 @@ function toggleAdmin(){
 
 /* ---------- Navegação ---------- */
 const TABS_BASE = [
-  {id:'inicio', label:'Início', icon:'🏠'},
-  {id:'vencedores', label:'Vencedores', icon:'🏆'},
-  {id:'perfil', label:'Perfil', icon:'👤'},
-  {id:'carteira', label:'Carteira', icon:'👛'}
+  {id:'inicio', label:'Início', icon:'home'},
+  {id:'vencedores', label:'Vencedores', icon:'award'},
+  {id:'perfil', label:'Perfil', icon:'user'},
+  {id:'carteira', label:'Carteira', icon:'wallet'}
 ];
 
 function renderBottomNav(){
   let tabs = TABS_BASE.slice();
-  if(state.adminMode) tabs.push({id:'admin', label:'Admin', icon:'🛠'});
+  if(state.adminMode) tabs.push({id:'admin', label:'Admin', icon:'settings'});
   const nav = document.getElementById('bottombar');
   const activeForBar = (state.tab==='detalhe' || state.tab==='criar') ? null : state.tab;
   nav.innerHTML = tabs.map(t=>
     `<button class="${activeForBar===t.id?'active':''}" onclick="goTab('${t.id}')">
-      <span class="ic">${t.icon}</span><span class="lb">${t.label}</span>
+      <span class="ic">${ic(t.icon,20)}</span><span class="lb">${t.label}</span>
     </button>`
   ).join('');
   document.getElementById('adminToggle').className = 'admin-toggle' + (state.adminMode?' on':'');
-  document.getElementById('adminToggle').textContent = state.adminMode ? '● Admin ativo' : 'Modo Admin';
+  document.getElementById('adminToggle').textContent = state.adminMode ? 'Admin ativo' : 'Modo Admin';
   document.getElementById('fabCriar').style.display = (state.tab==='inicio') ? 'flex' : 'none';
 }
 function goTab(id){ state.tab = id; state.viewingAdId=null; render(); }
@@ -685,7 +700,7 @@ function viewMercado(db){
   const visiveis = db.ads.filter(a=>['ativo','contagem'].includes(a.status));
   if(visiveis.length===0){
     return `<h1 class="page-title">Início</h1><p class="page-sub">Rifas publicadas e aprovadas, disponíveis para compra de bilhetes.</p>
-    <div class="empty"><div class="big">🎟️</div>Ainda não há rifas ativas no mercado. Toca em + para criar a primeira.</div>`;
+    <div class="empty"><div class="big">${ic('inbox',30)}</div>Ainda não há rifas ativas no mercado. Toca em + para criar a primeira.</div>`;
   }
   return `
     <h1 class="page-title">Início</h1>
@@ -698,7 +713,7 @@ function cardAnuncio(ad){
   const pct = Math.min(100, Math.round((ad.bilhetes.length/ad.minBilhetes)*100));
   return `
     <div class="card" onclick="verAnuncio(${ad.id})">
-      <div class="thumb">🎁<span class="status-badge" style="background:var(--surface-3);color:var(--text-muted);">${ad.categoria}</span></div>
+      <div class="thumb">${ic('image',26)}<span class="status-badge" style="background:var(--surface-3);color:var(--text-muted);">${ad.categoria}</span></div>
       <div class="body">
         <div class="cat">${ad.status==='contagem' ? 'Sorteio marcado' : 'Valor est. '+euro(ad.valorEstimado)}</div>
         <h3>${ad.titulo}</h3>
@@ -752,7 +767,7 @@ function viewDetalhe(db, adId){
   } else if(ad.status==='sorteado'){
     acaoHtml = `
       <div class="winner-card">
-        <div class="trophy">🏆</div>
+        <div class="verified-icon">${ic('check',30)}</div>
         <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">Bilhete vencedor</div>
         <div class="num">Nº ${String(ad.bilheteVencedor).padStart(4,'0')}</div>
         <div style="margin-top:8px;font-size:14px;">${ad.bilhetes.find(b=>b.numero===ad.bilheteVencedor)?.comprador || '—'}</div>
@@ -774,8 +789,8 @@ function viewDetalhe(db, adId){
   }
 
   return `
-    <div class="back-link" onclick="goTab('inicio')">← Voltar ao início</div>
-    <div class="detail-hero">🎁</div>
+    <div class="back-link" onclick="goTab('inicio')">${ic('arrowLeft',15)} Voltar ao início</div>
+    <div class="detail-hero">${ic('image',34)}</div>
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
       <div>
         <div class="cat" style="color:var(--gold);font-size:11px;text-transform:uppercase;font-weight:600;margin-bottom:4px;">${ad.categoria} · ${ad.localizacao}</div>
@@ -804,7 +819,7 @@ function viewDetalhe(db, adId){
 function ticketHtml(b, vencedor){
   const isWinner = vencedor===b.numero;
   return `<div class="ticket ${isWinner?'winner':''}">
-    <div class="main"><div class="name">${b.comprador}${isWinner?' 🏆 vencedor':''}</div><div class="date">${formatDate(b.data)}</div></div>
+    <div class="main"><div class="name">${b.comprador}${isWinner?' · vencedor':''}</div><div class="date">${formatDate(b.data)}</div></div>
     <div class="stub"><div class="num">#${String(b.numero).padStart(4,'0')}</div><div class="hash">rifa</div></div>
   </div>`;
 }
@@ -823,7 +838,7 @@ function confirmarCompra(adId){
 /* ---------- Criar anúncio ---------- */
 function viewCriar(){
   return `
-    <div class="back-link" onclick="goTab('inicio')">← Voltar ao início</div>
+    <div class="back-link" onclick="goTab('inicio')">${ic('arrowLeft',15)} Voltar ao início</div>
     <h1 class="page-title">Criar anúncio</h1>
     <p class="page-sub">O teu anúncio passa por aprovação antes de ficar visível no mercado. Todos os bilhetes custam ${euro(TICKET_PRICE)}.</p>
     <div class="panel">
@@ -951,7 +966,7 @@ function viewPerfil(db){
   const seguindoCount = db.seguindo.length;
 
   const meusHtml = meus.length===0
-    ? `<div class="empty"><div class="big">📢</div>Ainda não criaste nenhum anúncio. Toca em + no Início para criares o primeiro.</div>`
+    ? `<div class="empty"><div class="big">${ic('inbox',30)}</div>Ainda não criaste nenhum anúncio. Toca em + no Início para criares o primeiro.</div>`
     : meus.map(ad=>{
         const bruto = ad.bilhetes.length*TICKET_PRICE;
         const liquido = bruto*(1-SERVICE_FEE);
@@ -963,7 +978,7 @@ function viewPerfil(db){
           </div>
           <div style="display:flex;align-items:center;gap:10px;">
             ${statusBadge(ad)}
-            ${ad.status==='sorteado' ? `<span class="hint" style="margin:0;color:var(--green);">Creditado na carteira ✓</span>` : ''}
+            ${ad.status==='sorteado' ? `<span class="hint" style="margin:0;color:var(--green);display:inline-flex;align-items:center;gap:4px;">${ic('checkSm',13)} Creditado na carteira</span>` : ''}
           </div>
         </div>`;
       }).join('');
@@ -1009,7 +1024,7 @@ function viewVencedores(db){
   const sorteados = db.ads.filter(a=>a.status==='sorteado');
   if(sorteados.length===0){
     return `<h1 class="page-title">Vencedores</h1><p class="page-sub">Registo público de todos os sorteios realizados na plataforma.</p>
-    <div class="empty"><div class="big">🏆</div>Ainda não houve sorteios concluídos.</div>`;
+    <div class="empty"><div class="big">${ic('award',30)}</div>Ainda não houve sorteios concluídos.</div>`;
   }
   return `
     <h1 class="page-title">Vencedores</h1>
@@ -1019,7 +1034,7 @@ function viewVencedores(db){
         const vencedor = ad.bilhetes.find(b=>b.numero===ad.bilheteVencedor);
         return `
         <div class="card" onclick="verAnuncio(${ad.id})">
-          <div class="thumb">🏆</div>
+          <div class="thumb thumb-gold">${ic('award',26)}</div>
           <div class="body">
             <div class="cat">${formatDate(ad.dataSorteio)}</div>
             <h3>${ad.titulo}</h3>
